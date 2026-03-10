@@ -1,0 +1,1865 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AB Sugar Mill — Advanced Comparison Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f6ff;
+    --surface: #ffffff;
+    --surface2: #e8f0fb;
+    --border: #c5d8f5;
+    --blue-dark: #0a3d8f;
+    --blue: #1a5cbf;
+    --blue-mid: #2e7dd1;
+    --blue-light: #5ba3e8;
+    --blue-pale: #b8d6f7;
+    --accent: #0066ff;
+    --text: #0d1f3c;
+    --text-muted: #4a6fa5;
+    --text-light: #7a9cc8;
+    --success: #0fa372;
+    --warn: #e07b00;
+    --danger: #c0392b;
+    --font-display: 'Prompt', sans-serif;
+    --font-body: 'Sarabun', sans-serif;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(10,61,143,0.10);
+    --shadow-lg: 0 8px 32px rgba(10,61,143,0.16);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* === HEADER === */
+  .header {
+    background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 60%, var(--blue-mid) 100%);
+    padding: 0 32px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 20px rgba(10,61,143,0.3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-logo {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .header-title {
+    flex: 1;
+  }
+  .header-title h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.01em;
+    font-family: var(--font-display);
+  }
+  .header-title p {
+    font-size: 12px;
+    color: var(--blue-pale);
+    margin-top: 1px;
+    font-family: var(--font-body);
+    font-weight: 300;
+  }
+
+  /* === MAIN LAYOUT === */
+  .main {
+    display: flex;
+    min-height: calc(100vh - 72px);
+  }
+
+  /* === LEFT PANEL === */
+  .left-panel {
+    width: 240px;
+    min-width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    position: sticky;
+    top: 72px;
+    height: calc(100vh - 72px);
+    flex-shrink: 0;
+    padding: 14px;
+  }
+
+  .panel-section {
+    margin-bottom: 20px;
+  }
+
+  .panel-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    color: var(--text-light);
+    text-transform: uppercase;
+    padding: 10px 0 8px;
+    font-family: var(--font-body);
+  }
+
+  /* Department Tabs */
+  .dept-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .dept-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-display);
+    color: var(--text-muted);
+  }
+
+  .dept-tab:hover {
+    border-color: var(--blue-light);
+    background: #fafbff;
+  }
+
+  .dept-tab.active {
+    background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+    color: white;
+    border-color: var(--blue);
+    box-shadow: 0 2px 8px rgba(26, 92, 191, 0.25);
+  }
+
+  .dept-tab .icon {
+    font-size: 16px;
+  }
+
+  /* Year Selection */
+  .year-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .year-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: var(--font-display);
+    color: var(--text-muted);
+  }
+
+  .year-checkbox:hover {
+    border-color: var(--blue-light);
+    background: #fafbff;
+  }
+
+  .year-checkbox input {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: var(--blue);
+  }
+
+  .year-checkbox.checked {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
+  }
+
+  /* === MIDDLE PANEL === */
+  .middle-panel {
+    width: 320px;
+    min-width: 320px;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 72px;
+    height: calc(100vh - 72px);
+    flex-shrink: 0;
+  }
+
+  .var-header {
+    padding: 12px 14px 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .var-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  .var-title span {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .var-badge {
+    font-size: 10px;
+    background: var(--blue-pale);
+    color: var(--blue-dark);
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-weight: 700;
+  }
+
+  .var-search {
+    position: relative;
+    padding-bottom: 10px;
+  }
+
+  .var-search input {
+    width: 100%;
+    padding: 7px 12px 7px 32px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .var-search input:focus {
+    border-color: var(--blue-mid);
+  }
+
+  .var-search::before {
+    content: '🔍';
+    position: absolute;
+    left: 9px;
+    top: 8px;
+    font-size: 13px;
+  }
+
+  .var-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 10px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .var-item {
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-family: var(--font-body);
+    font-weight: 400;
+    cursor: pointer;
+    color: var(--text-muted);
+    line-height: 1.3;
+    border: 1.5px solid transparent;
+    background: var(--surface);
+    transition: all 0.12s;
+  }
+
+  .var-item:hover {
+    background: var(--blue-pale);
+    color: var(--blue-dark);
+    border-color: var(--blue-light);
+  }
+
+  .var-item.selected {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* === CONTENT AREA === */
+  .content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  /* Tabs */
+  .tab-menu {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .tab-btn {
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-display);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: -2px;
+  }
+
+  .tab-btn:hover {
+    color: var(--blue);
+  }
+
+  .tab-btn.active {
+    color: var(--blue);
+    border-bottom-color: var(--blue);
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  /* Stats Row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  .stat-card .label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-light);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-card .value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--blue);
+    font-family: 'Courier New', monospace;
+  }
+
+  .stat-card .subtext {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 6px;
+  }
+
+  /* Chart Cards */
+  .chart-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+
+  .chart-card.full {
+    grid-column: 1 / -1;
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chart-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: var(--font-display);
+  }
+
+  .chart-subtitle {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 4px;
+  }
+
+  .metric-badge {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--blue-pale);
+    color: var(--blue-dark);
+  }
+
+  .year-legend {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .year-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1.5px solid;
+    background: transparent;
+  }
+
+  .chart-body {
+    position: relative;
+    height: 350px;
+  }
+
+  .chart-body.tall {
+    height: 450px;
+  }
+
+  /* Comparison Table */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 12px;
+  }
+
+  .comparison-table thead {
+    background: var(--blue-pale);
+  }
+
+  .comparison-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--blue-dark);
+    border-bottom: 2px solid var(--blue);
+    font-family: var(--font-display);
+  }
+
+  .comparison-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .comparison-table tbody tr:hover {
+    background: var(--surface2);
+  }
+
+  .comparison-table .metric-value {
+    font-family: 'Courier New', monospace;
+    color: var(--blue);
+    font-weight: 600;
+    text-align: right;
+  }
+
+  /* Status Indicator */
+  .status-indicator {
+    background: var(--blue-pale);
+    border: 2px solid var(--blue);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--blue-dark);
+    font-weight: 600;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-family: var(--font-display);
+  }
+
+  .status-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .status-label {
+    color: var(--text-light);
+    min-width: 85px;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .status-value {
+    color: var(--blue-dark);
+    font-weight: 700;
+    flex: 1;
+  }
+
+  .status-badge {
+    display: inline-block;
+    background: var(--blue);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-right: 4px;
+  }
+
+  .status-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .status-empty {
+    color: var(--text-light);
+    font-style: italic;
+  }
+
+  .status-updated {
+    color: var(--success);
+    font-weight: 700;
+  }
+
+  /* Buttons */
+  .btn-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-display);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover {
+    background: var(--blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(26, 92, 191, 0.25);
+  }
+
+  .btn.secondary {
+    background: var(--success);
+  }
+
+  .btn.secondary:hover {
+    background: #0c8860;
+  }
+
+  .btn.danger {
+    background: var(--danger);
+  }
+
+  .btn.danger:hover {
+    background: #a01a1a;
+  }
+
+  /* No Data */
+  .no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: var(--text-light);
+    text-align: center;
+  }
+
+  .no-data .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  .no-data p {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .no-data small {
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  /* Toast */
+  #uploadToast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 18px;
+    background: var(--blue);
+    color: white;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+    z-index: 1000;
+    max-width: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  #uploadToast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Upload Zone */
+  .upload-zone {
+    margin-top: 16px;
+    padding: 12px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .upload-zone:hover {
+    border-color: var(--blue);
+    background: var(--surface2);
+  }
+
+  /* Responsive */
+  @media (max-width: 1200px) {
+    .left-panel { width: 200px; }
+    .middle-panel { width: 280px; }
+  }
+
+  @media (max-width: 768px) {
+    .main { flex-direction: column; }
+    .left-panel, .middle-panel { width: 100%; height: auto; position: static; top: auto; }
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--blue-pale);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--blue-light);
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">📊</div>
+  <div class="header-title">
+    <h1>AB Sugar Mill — Advanced Dashboard</h1>
+    <p>เปรียบเทียบข้อมูลหลายปี ตามแผนก | Multi-Year & Department Analysis</p>
+  </div>
+</div>
+
+<div class="main">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <!-- Department Selection -->
+    <div class="panel-section">
+      <div class="panel-label">📍 แผนก</div>
+      <div class="dept-tabs" id="deptTabs"></div>
+    </div>
+
+    <!-- Year Selection -->
+    <div class="panel-section">
+      <div class="panel-label">📅 ปีการผลิต</div>
+      <div class="year-grid" id="yearGrid"></div>
+    </div>
+
+    <!-- Tools -->
+    <div class="panel-section">
+      <div class="panel-label">🛠️ เครื่องมือ</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <button class="btn" onclick="selectAllYears()" style="width: 100%; font-size: 11px;">✓ ทั้งหมด</button>
+        <button class="btn" onclick="deselectAllYears()" style="width: 100%; background: var(--warn); font-size: 11px;">✕ ยกเลิก</button>
+        <button class="btn secondary" onclick="exportData()" style="width: 100%; font-size: 11px;">📥 ส่งออก</button>
+      </div>
+    </div>
+
+    <!-- Data Status -->
+    <div class="panel-section">
+      <div class="panel-label">📁 ข้อมูล</div>
+      <div id="dataStatus" style="font-size: 11px; color: var(--text-muted); padding: 8px; background: var(--bg); border-radius: 6px; word-break: break-all; min-height: 40px;">
+        รอการอัพเดท...
+      </div>
+      <div class="upload-zone" id="uploadZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        📁 ลาก-วาง Excel ที่นี่
+      </div>
+    </div>
+  </div>
+
+  <!-- MIDDLE PANEL -->
+  <div class="middle-panel">
+    <div class="var-header">
+      <div class="var-title">
+        <span>📋 ตัวแปร</span>
+        <span class="var-badge" id="varCountBadge">0</span>
+      </div>
+      <div class="var-search">
+        <input type="text" id="varSearch" placeholder="ค้นหา...">
+      </div>
+    </div>
+    <div class="var-list" id="varList"></div>
+  </div>
+
+  <!-- CONTENT AREA -->
+  <div class="content">
+    <!-- Status Indicator -->
+    <div class="status-indicator" id="statusIndicator">
+      <div class="status-item">
+        <span class="status-label">📍 แผนก:</span>
+        <span class="status-value" id="statusDept"><span class="status-empty">ยังไม่เลือก</span></span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">📅 ปี:</span>
+        <span class="status-value" id="statusYears"><span class="status-empty">ยังไม่เลือก</span></span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">📋 ตัวแปร:</span>
+        <span class="status-value" id="statusVar"><span class="status-empty">ยังไม่เลือก</span></span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">✅ สถานะ:</span>
+        <span class="status-value" id="statusUpdate"><span class="status-empty">รอการเลือก</span></span>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-menu">
+      <button class="tab-btn active" onclick="switchTab('overview')">📊 สรุป</button>
+      <button class="tab-btn" onclick="switchTab('charts')">📈 กราฟ</button>
+      <button class="tab-btn" onclick="switchTab('comparison')">🔍 เปรียบเทียบ</button>
+      <button class="tab-btn" onclick="switchTab('detailed')">📋 รายละเอียด</button>
+    </div>
+
+    <!-- TAB: OVERVIEW -->
+    <div id="overview" class="tab-content active">
+      <div class="stats-row" id="overviewStats"></div>
+      <div id="overviewMessage" class="no-data">
+        <div class="icon">👆</div>
+        <p>เลือกแผนก ตัวแปร และปี</p>
+        <small>แล้วจะแสดงสรุปสถิติที่นี่</small>
+      </div>
+    </div>
+
+    <!-- TAB: CHARTS -->
+    <div id="charts" class="tab-content">
+      <div class="btn-group">
+        <button class="btn" onclick="generateCharts()">🔄 สร้างกราฟ</button>
+        <button class="btn secondary" onclick="toggleChartType()">🔀 เปลี่ยนประเภท</button>
+      </div>
+      <div id="chartGrid"></div>
+      <div id="chartsMessage" class="no-data">
+        <div class="icon">📈</div>
+        <p>เลือกตัวแปรและคลิก "สร้างกราฟ"</p>
+      </div>
+    </div>
+
+    <!-- TAB: COMPARISON -->
+    <div id="comparison" class="tab-content">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">📊 ตารางเปรียบเทียบสถิติ</div>
+            <div class="chart-subtitle">Mean, S.D., Min, Max ของแต่ละปี</div>
+          </div>
+        </div>
+        <div id="comparisonTableContainer">
+          <div class="no-data" style="padding: 40px;">
+            <div class="icon">📋</div>
+            <p>เลือกตัวแปรเพื่อดูตารางเปรียบเทียบ</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: DETAILED -->
+    <div id="detailed" class="tab-content">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">📋 ข้อมูลรายวัน</div>
+            <div class="chart-subtitle">Rolling S.D. และ MA of S.D. สำหรับแต่ละปี</div>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="comparison-table" id="detailedTable">
+            <thead>
+              <tr>
+                <th>วันที่</th>
+                <th>ค่า</th>
+                <th>S.D. (10d)</th>
+                <th>MA·S.D. (10d)</th>
+              </tr>
+            </thead>
+            <tbody id="detailedBody"></tbody>
+          </table>
+        </div>
+        <div id="detailedMessage" class="no-data" style="padding: 40px;">
+          <div class="icon">📋</div>
+          <p>เลือกตัวแปรเพื่อดูข้อมูลรายวัน</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="uploadToast"></div>
+
+<script>
+// ===== DATA & STATE =====
+let rawData = null;
+let yearData = {};
+let selectedYears = new Set();
+let selectedVar = null;
+let selectedDept = null;
+let allVariables = [];
+let allDepartments = ['ลูกหีบ', 'หม้อต้ม', 'หม้อเคี่ยว', 'หม้อปั่น'];
+let deptVarMap = {};
+let charts = {};
+let chartType = 'line';
+
+const allYears = ['60/61','61/62','62/63','63/64','64/65','65/66','66/67','67/68','68/69'];
+const yearColors = {
+  '60/61': '#1a5cbf', '61/62': '#e07b00', '62/63': '#0fa372', '63/64': '#c0392b',
+  '64/65': '#8e44ad', '65/66': '#16a085', '66/67': '#d35400', '67/68': '#2980b9', '68/69': '#f39c12'
+};
+
+const deptEmojis = {'ลูกหีบ': '🌾', 'หม้อต้ม': '♨️', 'หม้อเคี่ยว': '🔷', 'หม้อปั่น': '⚙️'};
+
+const deptVariables = {
+  'ลูกหีบ': [
+    'TOTAL CANE CRUSHED TODAY',
+    'CANE FIBER % CANE TODAY',
+    'PREPARATION INDEX TODAY',
+    '% POL EXTRACTION (CAL) TODAY',
+    'MIXED JUICE % CANE TODAY',
+    'IMBIBITION % CANE TODAY',
+    'MILLING LOSS TODAY',
+    'FIBER % CANE TODAY',
+    'FIRST JUICE BRIX TODAY',
+    'FIRST JUICE POL TODAY',
+    'FIRST JUICE PURITY TODAY',
+    'FIRST JUICE C.C.S. TODAY',
+    'TON POL IN CANE TODAY',
+    'TON POL IN MIXED JUICE TODAY',
+    'BRIX OF JUICE FIRST JUICE TODAY',
+    'BRIX OF JUICE LAST JUICE TODAY',
+    'BRIX OF JUICE MIXED JUICE TODAY',
+    'PURITY OF JUICE FIRST JUICE TODAY',
+    'PURITY OF JUICE LAST JUICE TODAY',
+    'PURITY OF JUICE MIXED JUICE TODAY',
+    'pH OF JUICE FIRST JUICE TODAY',
+    'pH OF JUICE LAST JUICE TODAY',
+    'pH OF JUICE MIXED JUICE TODAY',
+    '% R.S. FIRST JUICE TODAY',
+    '% R.S. MIXED JUICE TODAY',
+    'IMBIBITION % FIBER TODAY',
+    'IMBIBITION % FIBER Kb TODAY',
+    'IMBIBITION % FIBER Kp TODAY',
+    'PURITY DROP OF CANE JUICE TODAY',
+    'BAGASSES % FIBER TODAY',
+    'REDUCE EXTRACTION TODAY',
+    'MIXED JUICE WEIGHT (CAL) TODAY',
+    'A-MIXED JUICE % CANE TODAY',
+    'A-MIXED JUICE WEIGHT (CAL) TODAY',
+    'B-MIXED JUICE % CANE TODAY',
+    'B-MIXED JUICE WEIGHT (CAL) TODAY',
+    'MATERIAL CONSUMPTION น้ำยาฆ่าเชื้อลูกหีบ  A- TANDEM (kg) TODAY',
+    'MATERIAL CONSUMPTION น้ำยาฆ่าเชื้อลูกหีบ  B- TANDEM (kg) TODAY',
+    'A-TON CANE CRUSHED TODAY',
+    'B-TON CANE CRUSHED TODAY'
+  ],
+  'หม้อต้ม': [
+    'FINAL MOL. BRIX TODAY',
+    'BAGASSES % BRIX TODAY',
+    'STEAM & ELECTRICITY TON STEAM PRODUCE TODAY',
+    'STEAM & ELECTRICITY TON STEAM / TON CANE TODAY',
+    'STEAM & ELECTRICITY TON STEAM / TON SUGAR TODAY',
+    'STEAM & ELECTRICITY UNIT ,KW:CONSUMPTION TODAY',
+    'STEAM & ELECTRICITY UNIT / TON CANE TODAY',
+    'STEAM & ELECTRICITY UNIT / TON SUGAR TODAY',
+    'EVAPORATOR CLEANING AGENT HYDROCHLORIC ACID 35 % (Liter) TODAY',
+    'EVAPORATOR CLEANING AGENT CAUSTIC SODA 50 % (m3) TODAY',
+    'EVAPORATOR CLEANING AGENT CAUSTIC SODA FLAKE (kg) TODAY',
+    '% R.S. RAW SYRUP TODAY',
+    '% R.S.R. RAW SYRUP TODAY',
+    'COLOUR RAW SYRUP TODAY'
+  ],
+  'หม้อเคี่ยว': [
+    'A1 MASSECUITE (BATCH) NO. STRIKE TODAY',
+    'A1 MASSECUITE (BATCH) VOLUME(Cu.M.) TODAY',
+    'A1 MASSECUITE (BATCH) PURITY TODAY',
+    'A1 MASSECUITE (BATCH) COLOUR TODAY',
+    'A1 MASSECUITE (BATCH) DROP (NUTSCH) TODAY',
+    'A1 MASSECUITE (BATCH) % CRYSTAL CONTENT TODAY',
+    'A1 MASSECUITE (BATCH) % EXHAUSTION TODAY',
+    'A1-MASSECUITE (CONTINUOUS) VOLUME(Cu.M.) TODAY',
+    'A1-MASSECUITE (CONTINUOUS) PURITY TODAY',
+    'A1-MASSECUITE (CONTINUOUS) COLOUR TODAY',
+    'A1-MASSECUITE (CONTINUOUS) DROP (NUTSCH) TODAY',
+    'A2 MASSECUITE (W-3/VHP) NO. STRIKE TODAY',
+    'A2 MASSECUITE (W-3/VHP) VOLUME(Cu.M.) TODAY',
+    'A2 MASSECUITE (W-3/VHP) PURITY TODAY',
+    'A2 MASSECUITE (W-3/VHP) COLOUR TODAY',
+    'B-MASSECUITE NO. STRIKE TODAY',
+    'B-MASSECUITE VOLUME(Cu.M.) TODAY',
+    'B-MASSECUITE PURITY TODAY',
+    'B-MASSECUITE DROP (NUTSCH) TODAY',
+    'B-MASSECUITE % CRYSTAL CONTENT TODAY',
+    'B-MASSECUITE % EXHAUSTION TODAY',
+    'C-MASSECUITE (BATCH) NO. STRIKE TODAY',
+    'C-MASSECUITE (BATCH) VOLUME(Cu.M.) TODAY',
+    'C-MASSECUITE (BATCH) PURITY TODAY',
+    'C-MASSECUITE (BATCH) DROP (NUTSCH) TODAY',
+    'C-MASSECUITE (BATCH) % CRYSTAL CONTENT TODAY',
+    'C-MASSECUITE (BATCH) % EXHAUSTION TODAY',
+    'C-MASSECUITE (CONTINUOUS) VOLUME(Cu.M.) TODAY',
+    'C-MASSECUITE (CONTINUOUS) PURITY TODAY',
+    'C-MASSECUITE (CONTINUOUS) DROP (NUTSCH) TODAY',
+    'MASSECUITE REJECT NO. STRIKE TODAY',
+    'MASSECUITE REJECT VOLUME(Cu.M.) TODAY',
+    'MASSECUITE REJECT PURITY TODAY',
+    'MASSECUITE REJECT COLOUR TODAY',
+    'A-SEED NO. STRIKE TODAY',
+    'A-SEED VOLUME(Cu.M.) TODAY',
+    'A-SEED PURITY TODAY',
+    'AB-SEED NO. STRIKE TODAY',
+    'AB-SEED VOLUME(Cu.M.) TODAY',
+    'AB-SEED PURITY TODAY',
+    'B-SEED NO. STRIKE TODAY',
+    'B-SEED VOLUME(Cu.M.) TODAY',
+    'B-SEED PURITY TODAY',
+    'C-SEED NO. STRIKE TODAY',
+    'C-SEED VOLUME(Cu.M.) TODAY',
+    'C-SEED PURITY TODAY',
+    'C-SEED DROP (NUTSCH) TODAY',
+    'C-SEED % CRYSTAL CONTENT TODAY',
+    'MASSECUITE RATIO A1-MASSECUITE (BATCH) TODAY',
+    'MASSECUITE RATIO A1-MASSECUITE (CONTINUOUS) TODAY',
+    'MASSECUITE RATIO A2-MASSECUITE TODAY',
+    'MASSECUITE RATIO A-MASSECUITE TODAY',
+    'MASSECUITE RATIO B-MASSECUITE TODAY',
+    'MASSECUITE RATIO C-MASSECUITE TODAY',
+    'C-FEED BRIX TODAY',
+    'C-FEED PURITY TODAY',
+    'B-MAGMA BRIX TODAY',
+    'B-MAGMA PURITY TODAY',
+    'C-MAGMA BRIX TODAY',
+    'C-MAGMA PURITY TODAY',
+    'C-REMELT BRIX TODAY',
+    'C-REMELT PURITY TODAY',
+    'C-REMELT COLOUR TODAY',
+    'COOLING WATER (MASSECUITE-C) TODAY',
+    'COOLING WATER (MASSECUITE-C) INLET  TEMPERATURE  © TODAY',
+    'COOLING WATER (MASSECUITE-C) pH TODAY',
+    'COOLING WATER (MASSECUITE-C) SUGAR  (PPM) TODAY',
+    'A-SUGAR TO REMELT WEIGHT (TON) TODAY',
+    'A-SUGAR TO REMELT POL TODAY',
+    'A-SUGAR TO REMELT COLOUR TODAY',
+    'B-SUGAR TO REMELT WEIGHT (TON) TODAY',
+    'B-SUGAR TO REMELT POL TODAY',
+    'B-SUGAR TO REMELT COLOUR TODAY',
+    'SILO SUGAR TO REMELT WEIGHT (TON) TODAY',
+    'SILO SUGAR TO REMELT POL TODAY',
+    'SILO SUGAR TO REMELT MOISTURE TODAY',
+    'SILO SUGAR TO REMELT COLOUR TODAY'
+  ],
+  'หม้อปั่น': [
+    'RAW SUGAR TODAY',
+    'VHP RAW SUGAR TODAY',
+    'NATURAL SUGAR TODAY',
+    'WHITE SUGAR NO. 3 TODAY',
+    'WHITE SUGAR TODAY',
+    'REFINED SUGAR TODAY',
+    'SUPER REFINED SUGAR TODAY',
+    'TOTAL SUGAR TODAY',
+    'TOTAL BURNED CANE TODAY',
+    'CANE POL % CANE TODAY',
+    'CANE C.C.S. (OCSB) TODAY',
+    'CANE C.C.S. (KBS) TODAY',
+    'CANE TRASH % CANE TODAY',
+    'CANE % BURNED CANE TODAY',
+    'SAND FROM SEPARATOR (TONS) TODAY',
+    'SAND FROM SEPARATOR (TONS) % CANE TODAY',
+    'SAND FROM CYCLONE (TONS) TODAY',
+    'SAND FROM CYCLONE (TONS) % CANE TODAY',
+    'BAGASSES WEIGHT TODAY',
+    'BAGASSES % CANE TODAY',
+    'BAGASSES Pol TODAY',
+    'BAGASSES MOISTURE TODAY',
+    'FILTER CAKE WEIGHT TODAY',
+    'FILTER CAKE % CANE TODAY',
+    'FILTER CAKE POL TODAY',
+    'FILTER CAKE MOISTURE TODAY',
+    'FINAL MOL. WEIGHT TODAY',
+    'FINAL MOL. % CANE TODAY',
+    'FINAL MOL. POL TODAY',
+    'FINAL MOL. PURITY TODAY',
+    'FINAL MOL. pH TODAY',
+    'FINAL MOL. % R.S TODAY',
+    'FINAL MOL. % T.S.A.I TODAY',
+    'FINAL MOL. TEMPERATURE TODAY',
+    'TON POL IN SUGAR TODAY',
+    'OVERALL RECOVERY1 TODAY',
+    'TOTAL LOSS TODAY',
+    'LOSS IN BAGASSE TODAY',
+    'LOSS IN FILTER CAKE TODAY',
+    'LOSS IN FILTER PRESS TODAY',
+    'LOSS IN FINAL MOLASSE1 TODAY',
+    'LOSS IN SAND TODAY',
+    'UNDETERMINED LOSS1 TODAY',
+    'BOILING HOUSE RECOVERY1 TODAY',
+    'S.J.M. AVAILABLE TODAY',
+    '% ACTUAL TO THEORETICAL TODAY',
+    'WINTER CARP VALUE TODAY',
+    'WINTER CARP RATIO TODAY',
+    'AVAILABLE SUGAR WEIGHT TODAY',
+    'AVAILABLE SUGAR % CANE TODAY',
+    'YIELD % C.C.S. (สอน.) TODAY',
+    'SUGAR YIELD AS 96 POL/10 C.C.S. TODAY',
+    'COEFFICIENT OF WORK TODAY',
+    'EST. TON SUGAR IN STOCK TODAY',
+    'EST. TON FINAL MOLASSES IN STOCK TODAY',
+    'EST. TOTAL SUGAR TODAY',
+    'EST. TOTAL SUGAR % CANE TODAY',
+    'EST. YIELD % C.C.S .(ส.อ.น.) TODAY',
+    'EST. COEFFICIENT OF WORK TODAY',
+    'EST. SUGAR YIELD AS 96 POL/10 C.C.S. TODAY',
+    'LOSS IN FINAL MOLASSE2 TODAY',
+    'UNDETERMINED LOSS2 TODAY',
+    'BOILING HOUSE RECOVERY2 TODAY',
+    'RAW SUGAR % CANE TODAY',
+    'RAW SUGAR POL TODAY',
+    'RAW SUGAR MOISTURE TODAY',
+    'RAW SUGAR COLOUR TODAY',
+    'RAW SUGAR % R.S. TODAY',
+    'RAW SUGAR % ASH TODAY',
+    'RAW SUGAR TEMPERATURE TODAY',
+    'VHP SUGAR % CANE TODAY',
+    'VHP SUGAR POL TODAY',
+    'VHP SUGAR MOISTURE TODAY',
+    'VHP SUGAR COLOUR TODAY',
+    'VHP SUGAR % R.S. TODAY',
+    'VHP SUGAR % ASH TODAY',
+    'VHP SUGAR % SEDIMENT TODAY',
+    'VHP SUGAR M.A. TODAY',
+    'VHP SUGAR C.V. TODAY',
+    'NATURAL SUGAR % CANE TODAY',
+    'NATURAL SUGAR POL TODAY',
+    'NATURAL SUGAR MOISTURE TODAY',
+    'NATURAL SUGAR COLOUR TODAY',
+    'NATURAL SUGAR % R.S. TODAY',
+    'NATURAL SUGAR % ASH TODAY',
+    'NATURAL SUGAR % SEDIMENT TODAY',
+    'NATURAL SUGAR M.A. TODAY',
+    'NATURAL SUGAR C.V. TODAY',
+    'WHITE NO. 3 % CANE TODAY',
+    'WHITE NO. 3 POL TODAY',
+    'WHITE NO. 3 MOISTURE TODAY',
+    'WHITE NO. 3 COLOUR TODAY',
+    'WHITE NO. 3 % R.S. TODAY',
+    'WHITE NO. 3 % ASH TODAY',
+    'WHITE NO. 3 % SEDIMENT TODAY',
+    'WHITE NO. 3 M.A. TODAY',
+    'WHITE NO. 3 C.V. TODAY',
+    'WHITE SUGAR % CANE TODAY',
+    'WHITE SUGAR POL TODAY',
+    'WHITE SUGAR MOISTURE TODAY',
+    'WHITE SUGAR TOTAL MOISTURE TODAY',
+    'WHITE SUGAR COLOUR TODAY',
+    'WHITE SUGAR % R.S. TODAY',
+    'WHITE SUGAR % ASH TODAY',
+    'WHITE SUGAR % SEDIMENT TODAY',
+    'WHITE SUGAR M.A. TODAY',
+    'WHITE SUGAR C.V. TODAY',
+    'REFINED SUGAR % CANE TODAY',
+    'REFINED SUGAR POL TODAY',
+    'REFINED SUGAR MOISTURE TODAY',
+    'REFINED SUGAR TOTAL MOISTURE TODAY',
+    'REFINED SUGAR COLOUR TODAY',
+    'REFINED SUGAR % R.S. TODAY',
+    'REFINED SUGAR % ASH TODAY',
+    'REFINED SUGAR % SEDIMENT TODAY',
+    'REFINED SUGAR M.A. TODAY',
+    'REFINED SUGAR C.V. TODAY',
+    'SUPER REFINED % CANE TODAY',
+    'SUPER REFINED POL TODAY',
+    'SUPER REFINED MOISTURE TODAY',
+    'SUPER REFINED TOTAL MOISTURE TODAY',
+    'SUPER REFINED COLOUR TODAY',
+    'SUPER REFINED % R.S. TODAY',
+    'SUPER REFINED % ASH TODAY',
+    'SUPER REFINED % SEDIMENT TODAY',
+    'SUPER REFINED M.A. TODAY',
+    'SUPER REFINED C.V. TODAY',
+    '% R.S. MUD FILTRATE TODAY',
+    '% R.S.R. MUD FILTRATE TODAY',
+    'A1-MOLASSES PURITY TODAY',
+    'A1-MOLASSES PURITY RISE TODAY',
+    'A1-MOLASSES COLOUR TODAY',
+    'A1-MOLASSES BRIX TODAY',
+    'A2-MOLASSES PURITY TODAY',
+    'A2-MOLASSES PURITY RISE TODAY',
+    'A2-MOLASSES BRIX TODAY',
+    'B-MOLASSES PURITY TODAY',
+    'B-MOLASSES PURITY RISE TODAY',
+    'B-MOLASSES BRIX TODAY',
+    'C-MOLASSES PURITY TODAY',
+    'C-MOLASSES PURITY RISE TODAY',
+    'C-MOLASSES BRIX TODAY',
+    'C-MOLASSES TODAY',
+    'C-MOLASSES SUCTION (ปั่น) PURITY TODAY',
+    'C-SUGAR POL TODAY',
+    'C-SUGAR MOISTURE TODAY',
+    'C-SUGAR COLOUR TODAY',
+    'C-SUGAR M.A. TODAY',
+    'MATERIAL CONSUMPTION  น้ำยาลดฟอง (kg) TODAY',
+    'MATERIAL CONSUMPTION QUICK LIME (TONS) TODAY',
+    'MATERIAL CONSUMPTION - VOLUME (m3) TODAY',
+    'MATERIAL CONSUMPTION - MASS (tons) TODAY',
+    'MATERIAL CONSUMPTION - RATIO (kg/ton cane) TODAY',
+    'MATERIAL CONSUMPTION FLOCCULANT (kg) TODAY',
+    'MATERIAL CONSUMPTION ANTISCALANT (kg) TODAY',
+    'REFINERY STATION PEG TODAY',
+    'REFINERY STATION FILTER AID (kg) TODAY',
+    'REFINERY STATION SODIUM  CHLORIDE  24 % (Liter) TODAY',
+    'REFINERY STATION CAUSTIC SODA FLAKE (kg) TODAY',
+    'REFINERY STATION HYDROCHLORIC ACID 35 % (Liter) TODAY',
+    'CONDENSER WATER TODAY',
+    'CONDENSER WATER pH TODAY',
+    'CONDENSER WATER SUGAR (PPM) TODAY',
+    'CONDENSER WATER INLET TEMPERATURE  © TODAY',
+    'CONDENSER WATER OUTLET TEMPERATURE  © TODAY',
+    'COOLING WATER (V.CRYSTALIZE) TODAY',
+    'COOLING WATER (V.CRYSTALIZE) pH TODAY',
+    'COOLING WATER (V.CRYSTALIZE) SUGAR (PPM) TODAY',
+    'COOLING WATER (REFINERY) TODAY',
+    'COOLING WATER (REFINERY) INLET  TEMPERATURE  © TODAY',
+    'COOLING WATER (REFINERY) pH TODAY',
+    'COOLING WATER (REFINERY) SUGAR  (PPM) TODAY',
+    'WASTE WATER TODAY',
+    'WASTE WATER SUGAR  (PPM) TODAY',
+    'OVERALL RECOVERY1 TODAY.1',
+    'OVERALL RECOVERY1 PERIOD',
+    'OVERALL RECOVERY1 TODATE',
+    'OVERALL RECOVERY2 TODATE',
+    'A-SUGAR TO SILO POL TODAY',
+    'A-SUGAR TO SILO MOISTURE TODAY',
+    'A-SUGAR TO SILO COLOUR TODAY',
+    'B-SUGAR TO SILO POL TODAY',
+    'B-SUGAR TO SILO MOISTURE TODAY',
+    'B-SUGAR TO SILO COLOUR TODAY',
+    'A-SUGAR TO SILO POL PERIOD',
+    'A-SUGAR TO SILO COLOUR PERIOD',
+    'BOILING HOUSE RECOVERY1 TODAY.1',
+    'BOILING HOUSE RECOVERY1 PERIOD',
+    'BOILING HOUSE RECOVERY1 TODATE',
+    'BOILING HOUSE RECOVERY2 TODATE'
+  ]
+};
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded', () => {
+  renderDeptTabs();
+  renderYearGrid();
+  setupEventListeners();
+  generateMockData();
+});
+
+function renderDeptTabs() {
+  const html = allDepartments.map(dept => `
+    <button class="dept-tab ${dept === selectedDept ? 'active' : ''}" onclick="selectDept('${dept}')">
+      <span class="icon">${deptEmojis[dept]}</span>
+      <span>${dept}</span>
+    </button>
+  `).join('');
+  document.getElementById('deptTabs').innerHTML = html;
+}
+
+function renderYearGrid() {
+  const html = allYears.map(yr => `
+    <label class="year-checkbox ${selectedYears.has(yr) ? 'checked' : ''}" onclick="toggleYear('${yr}')">
+      <input type="checkbox" ${selectedYears.has(yr) ? 'checked' : ''}>
+      <span>${yr}</span>
+    </label>
+  `).join('');
+  document.getElementById('yearGrid').innerHTML = html;
+}
+
+function setupEventListeners() {
+  document.getElementById('varSearch').addEventListener('input', e => {
+    const query = e.target.value.toLowerCase();
+    document.querySelectorAll('.var-item').forEach(item => {
+      item.style.display = item.textContent.toLowerCase().includes(query) ? 'flex' : 'none';
+    });
+  });
+  
+  document.getElementById('uploadZone').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls,.csv';
+    input.onchange = e => handleFileUpload(e);
+    input.click();
+  });
+}
+
+// ===== DEPARTMENT SELECTION =====
+function selectDept(dept) {
+  selectedDept = dept;
+  selectedVar = null;
+  renderDeptTabs();
+  renderVariableList();
+  updateUI();
+}
+
+// ===== YEAR SELECTION =====
+function toggleYear(year) {
+  if (selectedYears.has(year)) {
+    selectedYears.delete(year);
+  } else {
+    selectedYears.add(year);
+  }
+  renderYearGrid();
+  updateUI();
+}
+
+function selectAllYears() {
+  allYears.forEach(yr => selectedYears.add(yr));
+  renderYearGrid();
+  updateUI();
+}
+
+function deselectAllYears() {
+  selectedYears.clear();
+  renderYearGrid();
+  updateUI();
+}
+
+// ===== GENERATE MOCK DATA =====
+function generateMockData() {
+  const mockRawData = [];
+  allYears.forEach((year, yearIdx) => {
+    for (let day = 1; day <= 100; day++) {
+      const row = {
+        'DATE': new Date(2020 + yearIdx, 10, day),
+        'ปีการผลิต': year,
+        'ราง': 'A',
+        'PERIOD': 1
+      };
+      
+      // Add sample variables for all departments
+      Object.values(deptVariables).flat().forEach(varName => {
+        const baseValue = 50 + Math.random() * 40;
+        const noise = Math.sin(day / 20) * 10 + Math.cos(yearIdx * 0.5) * 5;
+        row[varName] = baseValue + noise + Math.random() * 5;
+      });
+      
+      mockRawData.push(row);
+    }
+  });
+  
+  processData(mockRawData);
+}
+
+// ===== FILE UPLOAD =====
+function handleDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = 'var(--blue)';
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.style.borderColor = 'var(--border)';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = 'var(--border)';
+  if (e.dataTransfer.files.length > 0) {
+    processUploadedFile(e.dataTransfer.files[0]);
+  }
+}
+
+function handleFileUpload(e) {
+  if (e.target.files.length > 0) {
+    processUploadedFile(e.target.files[0]);
+  }
+}
+
+function processUploadedFile(file) {
+  showToast('⏳ กำลังประมวลผล...', '#1a5cbf');
+  const reader = new FileReader();
+  reader.onload = event => {
+    try {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, {defval: null});
+      processData(jsonData);
+      showToast(`✅ อัพเดทเสร็จ! ${jsonData.length} แถว`, '#0fa372');
+    } catch (err) {
+      showToast('❌ ' + err.message, '#c0392b');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ===== DATA PROCESSING =====
+function processData(data) {
+  rawData = data;
+  yearData = {};
+  allVariables = [];
+  
+  // Group by year
+  const groupedByYear = {};
+  data.forEach(row => {
+    const yr = row['ปีการผลิต'];
+    if (!groupedByYear[yr]) groupedByYear[yr] = [];
+    groupedByYear[yr].push(row);
+  });
+  
+  // Process each year
+  Object.entries(groupedByYear).forEach(([yr, yearRows]) => {
+    const yd = yearData[yr] = {dates: []};
+    
+    yd.dates = yearRows.map(r => {
+      const d = r['DATE'];
+      return d instanceof Date ? d.toLocaleDateString('en-GB') : String(d);
+    });
+    
+    const varNames = Object.keys(yearRows[0]).filter(k => 
+      !['DATE','ปีการผลิต','ราง','PERIOD'].includes(k)
+    );
+    
+    if (allVariables.length === 0) allVariables = varNames;
+    
+    varNames.forEach(varName => {
+      const values = yearRows.map(r => {
+        const v = r[varName];
+        return (v === null || v === '' || isNaN(v)) ? null : parseFloat(v);
+      });
+      yd[varName + '__raw'] = values;
+      yd[varName + '__sd'] = calculateRollingSD(values);
+      yd[varName + '__masd'] = calculateMASD(yd[varName + '__sd']);
+    });
+  });
+  
+  // Create department variable mapping
+  deptVarMap = {};
+  Object.entries(deptVariables).forEach(([dept, vars]) => {
+    deptVarMap[dept] = vars.filter(v => allVariables.includes(v));
+  });
+  
+  document.getElementById('dataStatus').textContent = `✅ ${data.length} แถว\n${allVariables.length} ตัวแปร\nจาก 4 แผนก`;
+  
+  if (!selectedDept) {
+    selectedDept = allDepartments[0];
+    renderDeptTabs();
+  }
+  renderVariableList();
+}
+
+function calculateRollingSD(values) {
+  const window = 10;
+  const minSize = 3;
+  return values.map((_, i) => {
+    if (i < minSize - 1) return null;
+    const start = Math.max(0, i - window + 1);
+    // ฟิลเตอร์: เอาเฉพาะค่าที่ไม่ใช่ null และไม่ใช่ 0
+    const vals = values.slice(start, i + 1).filter(v => v !== null && v !== 0);
+    if (vals.length < minSize) return null;
+    const mean = vals.reduce((a, b) => a + b) / vals.length;
+    const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length;
+    return Math.sqrt(variance);
+  });
+}
+
+function calculateMASD(sdValues) {
+  const window = 10;
+  return sdValues.map((_, i) => {
+    if (i < window - 1) return null;
+    // ฟิลเตอร์: เอาเฉพาะค่าที่ไม่ใช่ null และไม่ใช่ 0
+    const vals = sdValues.slice(i - window + 1, i + 1).filter(v => v !== null && v !== 0);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b) / vals.length;
+  });
+}
+
+// ===== VARIABLE SELECTION =====
+function renderVariableList() {
+  const vars = deptVarMap[selectedDept] || [];
+  document.getElementById('varCountBadge').textContent = vars.length;
+  
+  const list = document.getElementById('varList');
+  list.innerHTML = vars.map(varName => `
+    <div class="var-item ${varName === selectedVar ? 'selected' : ''}" onclick="selectVariable('${varName.replace(/'/g, "\\'")}')">
+      ${varName.replace(/ TODAY$/, '').replace(/ TODATE$/, '(สะสม)')}
+    </div>
+  `).join('');
+}
+
+function selectVariable(varName) {
+  selectedVar = varName;
+  renderVariableList();
+  updateUI();
+}
+
+// ===== UPDATE UI =====
+function updateUI() {
+  if (selectedYears.size === 0 || !selectedVar || !selectedDept) {
+    document.getElementById('overviewStats').innerHTML = 
+      '<div class="no-data" style="grid-column:1/-1"><p>เลือกแผนก ตัวแปร และปี</p></div>';
+  } else {
+    updateOverview();
+    updateComparison();
+    updateDetailedTable();
+  }
+  
+  // อัปเดตตัวบ่งชี้สถานะ
+  updateStatusIndicator();
+}
+
+// ===== UPDATE STATUS INDICATOR =====
+function updateStatusIndicator() {
+  // แผนก
+  const deptEl = document.getElementById('statusDept');
+  if (selectedDept) {
+    deptEl.innerHTML = `<span class="status-badge">${deptEmojis[selectedDept]}</span> ${selectedDept}`;
+  } else {
+    deptEl.innerHTML = '<span class="status-empty">ยังไม่เลือก</span>';
+  }
+  
+  // ปี
+  const yearsEl = document.getElementById('statusYears');
+  if (selectedYears.size > 0) {
+    const yearsList = Array.from(selectedYears).sort().join(', ');
+    const yearsCount = selectedYears.size;
+    yearsEl.innerHTML = `<span class="status-badges">${Array.from(selectedYears).sort().map(y => 
+      `<span class="status-badge">${y}</span>`
+    ).join('')}</span> (${yearsCount} ปี)`;
+  } else {
+    yearsEl.innerHTML = '<span class="status-empty">ยังไม่เลือก</span>';
+  }
+  
+  // ตัวแปร
+  const varEl = document.getElementById('statusVar');
+  if (selectedVar) {
+    const shortVar = selectedVar.replace(/ TODAY$/, '').substring(0, 40);
+    varEl.innerHTML = `<span class="status-badge">✓</span> ${shortVar}${selectedVar.length > 40 ? '...' : ''}`;
+  } else {
+    varEl.innerHTML = '<span class="status-empty">ยังไม่เลือก</span>';
+  }
+  
+  // สถานะ Update
+  const updateEl = document.getElementById('statusUpdate');
+  if (selectedDept && selectedYears.size > 0 && selectedVar) {
+    updateEl.innerHTML = '<span class="status-updated">✅ อัปเดตแล้ว</span>';
+  } else {
+    const missing = [];
+    if (!selectedDept) missing.push('แผนก');
+    if (selectedYears.size === 0) missing.push('ปี');
+    if (!selectedVar) missing.push('ตัวแปร');
+    updateEl.innerHTML = `<span class="status-empty">รอการเลือก (${missing.join(', ')})</span>`;
+  }
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  event.target.classList.add('active');
+  
+  // อัปเดตข้อมูลเมื่อเปลี่ยนไปแท็บ detailed
+  if (tabName === 'detailed') {
+    updateDetailedTable();
+  }
+}
+
+// ===== UPDATE OVERVIEW =====
+function updateOverview() {
+  const container = document.getElementById('overviewStats');
+  const varShortName = selectedVar.replace(/ TODAY$/, '').replace(/ TODATE$/, '(สะสม)');
+  
+  let html = `<h3 style="grid-column:1/-1; font-size:14px; font-weight:700; margin-bottom:12px;">${deptEmojis[selectedDept]} ${selectedDept} → ${varShortName}</h3>`;
+  
+  Array.from(selectedYears).sort().forEach(year => {
+    const yd = yearData[year];
+    // ฟิลเตอร์: เอาเฉพาะค่าที่ไม่ใช่ null และไม่ใช่ 0
+    const values = (yd[selectedVar + '__raw'] || []).filter(v => v !== null && v !== 0);
+    
+    if (!values.length) return;
+    
+    const mean = values.reduce((a, b) => a + b) / values.length;
+    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
+    const sd = Math.sqrt(variance);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    
+    const sdValues = (yd[selectedVar + '__sd'] || []).filter(v => v !== null && v !== 0);
+    const meanSD = sdValues.length ? sdValues.reduce((a, b) => a + b) / sdValues.length : null;
+    
+    const masdValues = (yd[selectedVar + '__masd'] || []).filter(v => v !== null && v !== 0);
+    const meanMASD = masdValues.length ? masdValues.reduce((a, b) => a + b) / masdValues.length : null;
+    
+    html += `
+      <div class="stat-card" style="border-left: 4px solid ${yearColors[year]};">
+        <div class="label">${year}</div>
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 11px; color: var(--text-light); margin-bottom: 6px;">เฉลี่ย</div>
+          <div class="value">${mean.toFixed(2)}</div>
+          <div class="subtext">S.D: ${sd.toFixed(2)}</div>
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 8px; font-size: 10px; color: var(--text-muted);">
+          <div>Min: ${min.toFixed(2)}</div>
+          <div>Max: ${max.toFixed(2)}</div>
+          <div style="margin-top: 4px; color: var(--warn);">Avg S.D: ${meanSD ? meanSD.toFixed(4) : '—'}</div>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
+
+// ===== GENERATE CHARTS =====
+function generateCharts() {
+  if (!selectedVar || !selectedDept) {
+    showToast('⚠️ เลือกแผนกและตัวแปร', '#e07b00');
+    return;
+  }
+  
+  destroyCharts();
+  const grid = document.getElementById('chartGrid');
+  const yearList = Array.from(selectedYears).sort();
+  
+  // ฟิลเตอร์: เอาเฉพาะค่าที่ไม่ใช่ 0
+  const maxLength = Math.max(...yearList.map(y => {
+    const yd = yearData[y];
+    const rawVals = (yd[selectedVar + '__raw'] || []);
+    return rawVals.filter(v => v !== null && v !== 0).length;
+  }));
+  
+  const labels = Array.from({length: maxLength}, (_, i) => `วันที่ ${i+1}`);
+  
+  grid.innerHTML = `
+    <div class="chart-card full">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">${deptEmojis[selectedDept]} ${selectedVar.replace(/ TODAY$/, '')}</div>
+          <div class="chart-subtitle">เปรียบเทียบค่าดิบ (Raw Values)</div>
+        </div>
+      </div>
+      <div class="year-legend">${yearList.map(y => 
+        `<span class="year-chip" style="color:${yearColors[y]};border-color:${yearColors[y]}">${y}</span>`
+      ).join('')}</div>
+      <div class="chart-body tall"><canvas id="chartRaw"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Rolling S.D. (10 วัน)</div>
+        </div>
+      </div>
+      <div class="chart-body"><canvas id="chartSD"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">MA of S.D. (10 วัน)</div>
+        </div>
+      </div>
+      <div class="chart-body"><canvas id="chartMASD"></canvas></div>
+    </div>
+  `;
+  
+  function buildDatasets(field) {
+    return yearList.map(year => {
+      const yd = yearData[year];
+      let vals = yd[selectedVar + '__' + field] || [];
+      
+      // ฟิลเตอร์: เอาเฉพาะค่าที่ไม่ใช่ 0 (สำหรับ raw) ส่วน sd/masd ให้ตรวจสอบค่าดิบ
+      if (field === 'raw') {
+        // เอาเฉพาะค่าที่ไม่ใช่ 0
+        vals = vals.map(v => (v === 0 || v === null) ? null : v);
+      } else {
+        // สำหรับ sd และ masd ให้แสดงเหมือนเดิม แต่ใช้ raw filter
+        const rawVals = yd[selectedVar + '__raw'] || [];
+        vals = vals.map((v, idx) => {
+          const rawVal = rawVals[idx];
+          // ถ้า raw value เป็น 0 หรือ null ให้ส่ง null
+          if (rawVal === 0 || rawVal === null) return null;
+          return v;
+        });
+      }
+      
+      const paddedVals = [...vals];
+      while (paddedVals.length < maxLength) paddedVals.push(null);
+      
+      return {
+        label: year,
+        data: paddedVals,
+        borderColor: yearColors[year],
+        backgroundColor: yearColors[year] + '18',
+        borderWidth: 2,
+        fill: field === 'raw',
+        tension: 0.3,
+        spanGaps: false,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      };
+    });
+  }
+  
+  const cfgBase = {
+    type: chartType,
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: {duration: 300},
+      plugins: {
+        legend: {display: true, labels: {font: {size: 11}, padding: 12}},
+        tooltip: {mode: 'index', intersect: false}
+      },
+      scales: {
+        x: {ticks: {maxTicksLimit: 15, font: {size: 10}}, grid: {color: 'rgba(0,0,0,0.03)'}},
+        y: {ticks: {font: {size: 10}}, grid: {color: 'rgba(0,0,0,0.05)'}}
+      }
+    }
+  };
+  
+  charts.raw = new Chart(document.getElementById('chartRaw'), {...cfgBase, data: {labels, datasets: buildDatasets('raw')}});
+  charts.sd = new Chart(document.getElementById('chartSD'), {...cfgBase, data: {labels, datasets: buildDatasets('sd')}});
+  charts.masd = new Chart(document.getElementById('chartMASD'), {...cfgBase, data: {labels, datasets: buildDatasets('masd')}});
+}
+
+function toggleChartType() {
+  chartType = chartType === 'line' ? 'bar' : 'line';
+  generateCharts();
+}
+
+// ===== COMPARISON TABLE =====
+function updateComparison() {
+  const container = document.getElementById('comparisonTableContainer');
+  const yearList = Array.from(selectedYears).sort();
+  
+  let html = `
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th style="background: var(--bg);">ปี</th>
+          <th>ค่าเฉลี่ย</th>
+          <th>S.D.</th>
+          <th>Min</th>
+          <th>Max</th>
+          <th>Avg S.D.</th>
+          <th>Avg MA·S.D.</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  yearList.forEach(year => {
+    const yd = yearData[year];
+    // ฟิลเตอร์: เอาเฉพาะค่าที่ไม่ใช่ null และไม่ใช่ 0
+    const values = (yd[selectedVar + '__raw'] || []).filter(v => v !== null && v !== 0);
+    const sdValues = (yd[selectedVar + '__sd'] || []).filter(v => v !== null && v !== 0);
+    const masdValues = (yd[selectedVar + '__masd'] || []).filter(v => v !== null && v !== 0);
+    
+    if (!values.length) return;
+    
+    const mean = values.reduce((a, b) => a + b) / values.length;
+    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
+    const sd = Math.sqrt(variance);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const avgSD = sdValues.length ? sdValues.reduce((a, b) => a + b) / sdValues.length : null;
+    const avgMASD = masdValues.length ? masdValues.reduce((a, b) => a + b) / masdValues.length : null;
+    
+    html += `
+      <tr>
+        <td style="background: var(--bg); font-weight: 600; color: ${yearColors[year]};">${year}</td>
+        <td class="metric-value">${mean.toFixed(4)}</td>
+        <td class="metric-value">${sd.toFixed(4)}</td>
+        <td class="metric-value">${min.toFixed(4)}</td>
+        <td class="metric-value">${max.toFixed(4)}</td>
+        <td class="metric-value">${avgSD ? avgSD.toFixed(4) : '—'}</td>
+        <td class="metric-value">${avgMASD ? avgMASD.toFixed(4) : '—'}</td>
+      </tr>
+    `;
+  });
+  
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+// ===== DETAILED TABLE =====
+function updateDetailedTable() {
+  const tbody = document.getElementById('detailedBody');
+  const msgDiv = document.getElementById('detailedMessage');
+  const yearList = Array.from(selectedYears).sort();
+  
+  if (!selectedVar || yearList.length === 0) {
+    tbody.innerHTML = '';
+    msgDiv.style.display = 'flex';
+    return;
+  }
+  
+  msgDiv.style.display = 'none';
+  
+  let html = '';
+  
+  yearList.forEach(year => {
+    const yd = yearData[year];
+    const rawVals = yd[selectedVar + '__raw'] || [];
+    const sdVals = yd[selectedVar + '__sd'] || [];
+    const masdVals = yd[selectedVar + '__masd'] || [];
+    const dates = yd.dates || [];
+    
+    rawVals.forEach((raw, idx) => {
+      // แสดงเฉพาะแถวที่มีค่า (ไม่ใช่ 0 และไม่ใช่ null)
+      if (raw !== null && raw !== 0) {
+        const sd = sdVals[idx];
+        const masd = masdVals[idx];
+        const date = dates[idx] || `Day ${idx + 1}`;
+        
+        html += `
+          <tr>
+            <td>${year} - ${date}</td>
+            <td class="metric-value">${raw.toFixed(4)}</td>
+            <td class="metric-value">${sd !== null && sd !== 0 ? sd.toFixed(4) : '—'}</td>
+            <td class="metric-value">${masd !== null && masd !== 0 ? masd.toFixed(4) : '—'}</td>
+          </tr>
+        `;
+      }
+    });
+  });
+  
+  tbody.innerHTML = html || '<tr><td colspan="4" style="text-align: center; color: var(--text-light);">ไม่มีข้อมูล</td></tr>';
+}
+
+// ===== EXPORT =====
+function exportData() {
+  if (!selectedVar || !selectedDept) {
+    showToast('⚠️ เลือกแผนกและตัวแปร', '#e07b00');
+    return;
+  }
+  
+  const yearList = Array.from(selectedYears).sort();
+  const exportData = [];
+  
+  yearList.forEach(year => {
+    const yd = yearData[year];
+    const rawVals = yd[selectedVar + '__raw'] || [];
+    const sdVals = yd[selectedVar + '__sd'] || [];
+    const masdVals = yd[selectedVar + '__masd'] || [];
+    
+    rawVals.forEach((raw, idx) => {
+      // เอาเฉพาะแถวที่ raw value ไม่ใช่ 0 และไม่ใช่ null
+      if (raw !== null && raw !== 0) {
+        exportData.push({
+          'แผนก': selectedDept,
+          'ปี': year,
+          'วันที่': (yd.dates || [])[idx],
+          'ค่า': raw,
+          'S.D. (10d)': sdVals[idx],
+          'MA·S.D. (10d)': masdVals[idx]
+        });
+      }
+    });
+  });
+  
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data');
+  XLSX.writeFile(wb, `AB_${selectedDept}_${selectedVar.substring(0, 15)}.xlsx`);
+  showToast('✅ ส่งออกเสร็จ', '#0fa372');
+}
+
+// ===== UTILITIES =====
+function showToast(msg, color) {
+  const t = document.getElementById('uploadToast');
+  t.textContent = msg;
+  t.style.background = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function destroyCharts() {
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
+  charts = {};
+}
+
+</script>
+</body>
+</html>
